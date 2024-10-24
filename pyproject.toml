@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "vec-chip8"
+version = "0.1.0"
+description = ""
+authors = ["Victor Severo <victor.severo.miranda@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.13"
+pygame = "^2.6.1"
+numpy = "^2.1.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
