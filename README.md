@@ -3,7 +3,7 @@
 This project is an attempt to make CHIP-8 interpreters with Python according to the following plan:
 
 - [X] standard implementation
-- [ ] `numpy` implementation
+- [X] `numpy` implementation
 - [ ] vectorized `numpy` implementation
 - [ ] vectorized `torch` implementation
 
