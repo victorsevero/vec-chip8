@@ -4,7 +4,7 @@ This project is an attempt to make CHIP-8 interpreters with Python according to 
 
 - [X] standard implementation
 - [X] `numpy` implementation
-- [ ] vectorized `numpy` implementation
+- [X] vectorized `numpy` implementation
 - [ ] vectorized `torch` implementation
 
 The objective is to check if implementing vectorized interpreters on CPU and/or GPU is a viable approach and if it offers a performance boost for Reinforcement Learning applications.

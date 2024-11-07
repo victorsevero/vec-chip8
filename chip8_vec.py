@@ -364,7 +364,10 @@ class Chip8:
                 y_indices[:, :, None],
                 x_indices[:, None, :],
             )
-            indices = grid_y * SCREEN_WIDTH + grid_x
+            # we need to clip the indices to the screen size here. in practice,
+            # it won't really matter because indices greater than the screen
+            # size will be masked anyway, but we avoid invalid indexing
+            indices = (grid_y * SCREEN_WIDTH + grid_x) % 2048
             flat_indices = indices.reshape(n_ems, max_size_y * max_size_x)
             repeat_op_idxs = np.repeat(
                 opcode_idxs[:, np.newaxis],
@@ -519,12 +522,46 @@ class Chip8:
         self.execute_opcode(opcode)
 
 
-def main(game_filename, n_emulators=1):
+def find_best_grid(n_emulators: int) -> tuple[int, int]:
+    """Find best grid for n_emulators based on a widescreen aspect ratio
+
+    Parameters
+    ----------
+    n_emulators : int
+        Number of emulators to fit in the grid
+
+    Returns
+    -------
+    (int, int)
+        Best grid dimensions
+    """
+    target_ratio = 16 / 9
+    best_m, best_n = 1, n_emulators
+    best_diff = float("inf")
+
+    for n in range(1, n_emulators + 1):
+        m = int(np.ceil(n_emulators / n))
+
+        width = SCREEN_WIDTH * n
+        height = SCREEN_HEIGHT * m
+        aspect_ratio = width / height
+
+        diff = abs(aspect_ratio - target_ratio)
+
+        if diff < best_diff:
+            best_diff = diff
+            best_m, best_n = m, n
+
+    return best_m, best_n
+
+
+def main(game_filename, n_emulators):
     # Initialize emulator and graphics
     chip8 = Chip8(n_emulators=n_emulators, seed=666)
+    m, n = find_best_grid(n_emulators)
     pygame.init()
     screen = pygame.display.set_mode(
-        (n_emulators * SCREEN_WIDTH * SCALE, SCREEN_HEIGHT * SCALE)
+        (n * SCREEN_WIDTH * SCALE, m * SCREEN_HEIGHT * SCALE)
     )
     pygame.display.set_caption("CHIP-8 Interpreter")
 
@@ -564,11 +601,19 @@ def main(game_filename, n_emulators=1):
 
         # Draw display
         screen.fill((0, 0, 0))
+        filled_display = np.concatenate(
+            (
+                chip8.display,
+                np.zeros(
+                    (m * n - n_emulators, SCREEN_WIDTH * SCREEN_HEIGHT),
+                    dtype=np.uint8,
+                ),
+            )
+        )
         display_pixels = (
-            chip8.display.copy()
-            .reshape((n_emulators, SCREEN_HEIGHT, SCREEN_WIDTH))
-            .swapaxes(0, 1)
-            .reshape((SCREEN_HEIGHT, n_emulators * SCREEN_WIDTH))
+            filled_display.reshape((m, n, SCREEN_HEIGHT, SCREEN_WIDTH))
+            .swapaxes(1, 2)
+            .reshape((m * SCREEN_HEIGHT, n * SCREEN_WIDTH))
         )
         display_pixels *= 255
         display_pixels = np.repeat(display_pixels, SCALE, axis=0)
@@ -584,10 +629,14 @@ def main(game_filename, n_emulators=1):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="CHIP-8 Interpreter",
+        description="Vectorized CHIP-8 Interpreter",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument("game", help="Game Filename without extension")
+    # a nice -n to display is 16*9*2^(2N+1), because width is double the height
+    parser.add_argument("--n_emulators", "-n", type=int, default=1152)
+    parser.add_argument("--scale", "-s", type=int, default=1)
     args = parser.parse_args()
     config = vars(args)
-    main(f"games/{config['game']}.ch8", n_emulators=2)
+    SCALE = config["scale"]
+    main(f"games/{config['game']}.ch8", n_emulators=config["n_emulators"])
