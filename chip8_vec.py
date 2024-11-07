@@ -127,7 +127,7 @@ class Chip8:
                 SCREEN_WIDTH * SCREEN_HEIGHT,
                 dtype=np.uint8,
             )
-        elif (opcode == 0x00EE).any():
+        if (opcode == 0x00EE).any():
             opcode_idxs = np.nonzero(opcode == 0x00EE)[0]
             # Return from subroutine
             self.sp[opcode_idxs] -= 1
@@ -135,12 +135,12 @@ class Chip8:
                 opcode_idxs,
                 self.sp[opcode_idxs],
             ]
-        elif (opcode & 0xF000 == 0x1000).any():
+        if (opcode & 0xF000 == 0x1000).any():
             opcode_idxs = np.nonzero(opcode & 0xF000 == 0x1000)[0]
             # Jump to address NNN
             # Compensate for the increment at the end
             self.pc[opcode_idxs] = nnn[opcode_idxs] - 2
-        elif (opcode & 0xF000 == 0x2000).any():
+        if (opcode & 0xF000 == 0x2000).any():
             opcode_idxs = np.nonzero(opcode & 0xF000 == 0x2000)[0]
             # Call subroutine at NNN
             self.stack[opcode_idxs, self.sp[opcode_idxs]] = self.pc[
@@ -149,7 +149,7 @@ class Chip8:
             self.sp[opcode_idxs] += 1
             # Compensate for the increment at the end
             self.pc[opcode_idxs] = nnn[opcode_idxs] - 2
-        elif (opcode & 0xF000 == 0x3000).any():
+        if (opcode & 0xF000 == 0x3000).any():
             opcode_idxs = np.nonzero(opcode & 0xF000 == 0x3000)[0]
             # Skip next instruction if Vx == kk
             self.pc[opcode_idxs] += np.uint16(
@@ -159,7 +159,7 @@ class Chip8:
                     0,
                 )
             )
-        elif (opcode & 0xF000 == 0x4000).any():
+        if (opcode & 0xF000 == 0x4000).any():
             opcode_idxs = np.nonzero(opcode & 0xF000 == 0x4000)[0]
             # Skip next instruction if Vx != kk
             self.pc[opcode_idxs] += np.uint16(
@@ -169,7 +169,7 @@ class Chip8:
                     0,
                 )
             )
-        elif (opcode & 0xF000 == 0x5000).any():
+        if (opcode & 0xF000 == 0x5000).any():
             opcode_idxs = np.nonzero(opcode & 0xF000 == 0x5000)[0]
             # Skip next instruction if Vx == Vy
             self.pc[opcode_idxs] += np.uint16(
@@ -180,22 +180,22 @@ class Chip8:
                     0,
                 )
             )
-        elif (opcode & 0xF000 == 0x6000).any():
+        if (opcode & 0xF000 == 0x6000).any():
             opcode_idxs = np.nonzero(opcode & 0xF000 == 0x6000)[0]
             # Set Vx = kk
             self.v[opcode_idxs, x[opcode_idxs]] = kk[opcode_idxs]
-        elif (opcode & 0xF000 == 0x7000).any():
+        if (opcode & 0xF000 == 0x7000).any():
             opcode_idxs = np.nonzero(opcode & 0xF000 == 0x7000)[0]
             # Set Vx = Vx + kk
             self.v[opcode_idxs, x[opcode_idxs]] += kk[opcode_idxs]
-        elif (opcode & 0xF00F == 0x8000).any():
+        if (opcode & 0xF00F == 0x8000).any():
             opcode_idxs = np.nonzero(opcode & 0xF00F == 0x8000)[0]
             # Set Vx = Vy
             self.v[opcode_idxs, x[opcode_idxs]] = self.v[
                 opcode_idxs,
                 y[opcode_idxs],
             ]
-        elif (opcode & 0xF00F == 0x8001).any():
+        if (opcode & 0xF00F == 0x8001).any():
             opcode_idxs = np.nonzero(opcode & 0xF00F == 0x8001)[0]
             # Set Vx = Vx OR Vy
             self.v[opcode_idxs, x[opcode_idxs]] |= self.v[
@@ -203,7 +203,7 @@ class Chip8:
                 y[opcode_idxs],
             ]
             self.v[opcode_idxs, 0xF] = 0
-        elif (opcode & 0xF00F == 0x8002).any():
+        if (opcode & 0xF00F == 0x8002).any():
             opcode_idxs = np.nonzero(opcode & 0xF00F == 0x8002)[0]
             # Set Vx = Vx AND Vy
             self.v[opcode_idxs, x[opcode_idxs]] &= self.v[
@@ -211,7 +211,7 @@ class Chip8:
                 y[opcode_idxs],
             ]
             self.v[opcode_idxs, 0xF] = 0
-        elif (opcode & 0xF00F == 0x8003).any():
+        if (opcode & 0xF00F == 0x8003).any():
             opcode_idxs = np.nonzero(opcode & 0xF00F == 0x8003)[0]
             # Set Vx = Vx XOR Vy
             self.v[opcode_idxs, x[opcode_idxs]] ^= self.v[
@@ -219,7 +219,7 @@ class Chip8:
                 y[opcode_idxs],
             ]
             self.v[opcode_idxs, 0xF] = 0
-        elif (opcode & 0xF00F == 0x8004).any():
+        if (opcode & 0xF00F == 0x8004).any():
             opcode_idxs = np.nonzero(opcode & 0xF00F == 0x8004)[0]
             # Set Vx = Vx + Vy, set VF = carry
             sum_value = (
@@ -229,7 +229,7 @@ class Chip8:
             carry = np.uint8(np.where(sum_value > 0xFF, 1, 0))
             self.v[opcode_idxs, x[opcode_idxs]] = np.uint8(sum_value)
             self.v[opcode_idxs, 0xF] = carry
-        elif (opcode & 0xF00F == 0x8005).any():
+        if (opcode & 0xF00F == 0x8005).any():
             opcode_idxs = np.nonzero(opcode & 0xF00F == 0x8005)[0]
             # Set Vx = Vx - Vy, set VF = NOT borrow
             not_borrow = np.uint8(
@@ -245,7 +245,7 @@ class Chip8:
                 y[opcode_idxs],
             ]
             self.v[opcode_idxs, 0xF] = not_borrow
-        elif (opcode & 0xF00F == 0x8006).any():
+        if (opcode & 0xF00F == 0x8006).any():
             opcode_idxs = np.nonzero(opcode & 0xF00F == 0x8006)[0]
             # Set Vx = Vx SHR 1
             carry = self.v[opcode_idxs, y[opcode_idxs]] & 0x1
@@ -253,7 +253,7 @@ class Chip8:
                 self.v[opcode_idxs, y[opcode_idxs]] >> 1
             )
             self.v[opcode_idxs, 0xF] = carry
-        elif (opcode & 0xF00F == 0x8007).any():
+        if (opcode & 0xF00F == 0x8007).any():
             opcode_idxs = np.nonzero(opcode & 0xF00F == 0x8007)[0]
             # Set Vx = Vy - Vx, set VF = NOT borrow
             not_borrow = np.uint8(
@@ -269,7 +269,7 @@ class Chip8:
                 - self.v[opcode_idxs, x[opcode_idxs]]
             )
             self.v[opcode_idxs, 0xF] = not_borrow
-        elif (opcode & 0xF00F == 0x800E).any():
+        if (opcode & 0xF00F == 0x800E).any():
             opcode_idxs = np.nonzero(opcode & 0xF00F == 0x800E)[0]
             # Set Vx = Vx SHL 1
             carry = (self.v[opcode_idxs, y[opcode_idxs]] & 0x80) >> 7
@@ -277,7 +277,7 @@ class Chip8:
                 self.v[opcode_idxs, y[opcode_idxs]] << 1
             )
             self.v[opcode_idxs, 0xF] = carry
-        elif (opcode & 0xF00F == 0x9000).any():
+        if (opcode & 0xF00F == 0x9000).any():
             opcode_idxs = np.nonzero(opcode & 0xF00F == 0x9000)[0]
             # Skip next instruction if Vx != Vy
             self.pc[opcode_idxs] += np.uint16(
@@ -288,18 +288,18 @@ class Chip8:
                     0,
                 )
             )
-        elif (opcode & 0xF000 == 0xA000).any():
+        if (opcode & 0xF000 == 0xA000).any():
             opcode_idxs = np.nonzero(opcode & 0xF000 == 0xA000)[0]
             # Set I = nnn
             self.i[opcode_idxs] = nnn[opcode_idxs]
-        elif (opcode & 0xF000 == 0xB000).any():
+        if (opcode & 0xF000 == 0xB000).any():
             opcode_idxs = np.nonzero(opcode & 0xF000 == 0xB000)[0]
             # Jump to address NNN + V0
             self.pc[opcode_idxs] = (
                 nnn[opcode_idxs] + self.v[opcode_idxs, 0] - 2
             )
             # Compensate for the increment at the end
-        elif (opcode & 0xF000 == 0xC000).any():
+        if (opcode & 0xF000 == 0xC000).any():
             opcode_idxs = np.nonzero(opcode & 0xF000 == 0xC000)[0]
             # Set Vx = random byte AND kk
             self.v[opcode_idxs, x[opcode_idxs]] = (
@@ -311,7 +311,7 @@ class Chip8:
                 )
                 & kk[opcode_idxs]
             )
-        elif (opcode & 0xF000 == 0xD000).any():
+        if (opcode & 0xF000 == 0xD000).any():
             opcode_idxs = np.nonzero(opcode & 0xF000 == 0xD000)[0]
             n_ems = opcode_idxs.size
             # Draw sprite at (Vx, Vy) with width 8 pixels and height n
@@ -329,7 +329,6 @@ class Chip8:
                 base_range_y[np.newaxis, :] < clipped_y_size[:, np.newaxis]
             )
 
-            # max_size_x = clipped_x_size.max()
             max_size_x = 8
             base_range_x = np.arange(max_size_x)
             ranges_x = np.repeat(base_range_x[np.newaxis, :], n_ems, axis=0)
@@ -343,7 +342,7 @@ class Chip8:
                     max_size_y,
                     axis=1,
                 ),
-                self.i[:, np.newaxis] + ranges_y,
+                self.i[opcode_idxs, np.newaxis] + ranges_y,
             ]
             flat_sprite = np.unpackbits(sprite_bytes, axis=1)
             flat_sprite_mask = np.repeat(
@@ -382,7 +381,7 @@ class Chip8:
                 flat_sprite & flat_sprite_mask
             )
 
-        elif (opcode & 0xF0FF == 0xE09E).any():
+        if (opcode & 0xF0FF == 0xE09E).any():
             opcode_idxs = np.nonzero(opcode & 0xF0FF == 0xE09E)[0]
             # Skip next instruction if key with the value of Vx is pressed
             self.pc[opcode_idxs] += np.uint16(
@@ -393,7 +392,7 @@ class Chip8:
                     0,
                 )
             )
-        elif (opcode & 0xF0FF == 0xE0A1).any():
+        if (opcode & 0xF0FF == 0xE0A1).any():
             opcode_idxs = np.nonzero(opcode & 0xF0FF == 0xE0A1)[0]
             # Skip next instruction if key with the value of Vx is not pressed
             self.pc[opcode_idxs] += np.uint16(
@@ -404,11 +403,11 @@ class Chip8:
                     0,
                 )
             )
-        elif (opcode & 0xF0FF == 0xF007).any():
+        if (opcode & 0xF0FF == 0xF007).any():
             opcode_idxs = np.nonzero(opcode & 0xF0FF == 0xF007)[0]
             # Set Vx = delay timer value
             self.v[opcode_idxs, x[opcode_idxs]] = self.delay_timer[opcode_idxs]
-        elif (opcode & 0xF0FF == 0xF00A).any():
+        if (opcode & 0xF0FF == 0xF00A).any():
             opcode_idxs = np.nonzero(opcode & 0xF0FF == 0xF00A)[0]
             n_ems = opcode_idxs.size
             # Wait for a key press, store the value of the key in Vx
@@ -445,23 +444,23 @@ class Chip8:
                 )
             )
 
-        elif (opcode & 0xF0FF == 0xF015).any():
+        if (opcode & 0xF0FF == 0xF015).any():
             opcode_idxs = np.nonzero(opcode & 0xF0FF == 0xF015)[0]
             # Set delay timer = Vx
             self.delay_timer[opcode_idxs] = self.v[opcode_idxs, x[opcode_idxs]]
-        elif (opcode & 0xF0FF == 0xF018).any():
+        if (opcode & 0xF0FF == 0xF018).any():
             opcode_idxs = np.nonzero(opcode & 0xF0FF == 0xF018)[0]
             # Set sound timer = Vx
             self.sound_timer[opcode_idxs] = self.v[opcode_idxs, x[opcode_idxs]]
-        elif (opcode & 0xF0FF == 0xF01E).any():
+        if (opcode & 0xF0FF == 0xF01E).any():
             opcode_idxs = np.nonzero(opcode & 0xF0FF == 0xF01E)[0]
             # Set I = I + Vx
             self.i[opcode_idxs] += self.v[opcode_idxs, x[opcode_idxs]]
-        elif (opcode & 0xF0FF == 0xF029).any():
+        if (opcode & 0xF0FF == 0xF029).any():
             opcode_idxs = np.nonzero(opcode & 0xF0FF == 0xF029)[0]
             # Set I = location of sprite for digit Vx
             self.i[opcode_idxs] = self.v[opcode_idxs, x[opcode_idxs]] * 5
-        elif (opcode & 0xF0FF == 0xF033).any():
+        if (opcode & 0xF0FF == 0xF033).any():
             opcode_idxs = np.nonzero(opcode & 0xF0FF == 0xF033)[0]
             # Store BCD representation of Vx in memory locations I, I+1, and I+2
             self.memory[opcode_idxs, self.i[opcode_idxs]] = (
@@ -473,7 +472,7 @@ class Chip8:
             self.memory[opcode_idxs, self.i[opcode_idxs] + 2] = (
                 self.v[opcode_idxs, x[opcode_idxs]] % 10
             )
-        elif (opcode & 0xF0FF == 0xF055).any():
+        if (opcode & 0xF0FF == 0xF055).any():
             opcode_idxs = np.nonzero(opcode & 0xF0FF == 0xF055)[0]
             # Store registers V0 through Vx in memory starting at location I
             max_x = x[opcode_idxs].max()
@@ -487,9 +486,9 @@ class Chip8:
             ] = self.v[opcode_idxs[row_indices], col_indices]
 
             self.i += x + 1
-        elif (opcode & 0xF0FF == 0xF065).any():
+        if (opcode & 0xF0FF == 0xF065).any():
             opcode_idxs = np.nonzero(opcode & 0xF0FF == 0xF065)[0]
-            # # Read registers V0 through Vx from memory starting at location I
+            # Read registers V0 through Vx from memory starting at location I
             max_x = x[opcode_idxs].max()
             range_x = np.arange(max_x + 1)
             mask = range_x < x[opcode_idxs][:, np.newaxis] + 1
@@ -500,8 +499,6 @@ class Chip8:
                 self.i[opcode_idxs[row_indices]] + col_indices,
             ]
             self.i[opcode_idxs] += x[opcode_idxs] + 1
-        else:
-            print(f"Unknown opcode: {opcode:04X}")
 
         # Move to the next instruction
         self.pc += 2
