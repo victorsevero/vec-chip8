@@ -18,3 +18,5 @@ Test ROMs were taken from [here](https://github.com/Timendus/chip8-test-suite?ta
 1. http://devernay.free.fr/hacks/chip8/C8TECH10.HTM
 2. https://tobiasvl.github.io/blog/write-a-chip-8-emulator
 3. https://github.com/Timendus/chip8-test-suite
+4. https://github.com/tizian/Chip-8-Emulator/blob/master/Pong%20(1%20player).ch8
+5. https://github.com/badlogic/chip8/blob/master/roms/pong.rom
