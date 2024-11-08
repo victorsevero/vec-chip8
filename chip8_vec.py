@@ -574,16 +574,11 @@ def main(game_filename, n_emulators):
     if "5_quirks" in game_filename:
         chip8.memory[:, 0x1FF] = 1
 
-    delay_timer = pygame.USEREVENT
-    # 17ms for the 60Hz delay timer
-    pygame.time.set_timer(delay_timer, 17)
-
-    clock_timer = pygame.USEREVENT + 1
-    # 2ms so that the game doesn't run too fast
-    pygame.time.set_timer(clock_timer, 2)
+    clock = pygame.time.Clock()
 
     # Main loop
     running = True
+    n_cycles = 0
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -594,35 +589,38 @@ def main(game_filename, n_emulators):
             elif event.type == pygame.KEYUP:
                 if event.key in KEY_MAP:
                     chip8.keys[np.arange(n_emulators), KEY_MAP[event.key]] = 0
-            elif event.type == delay_timer:
-                chip8.update_timers()
-            elif event.type == clock_timer:
-                chip8.cycle()
 
-        # Draw display
-        screen.fill((0, 0, 0))
-        filled_display = np.concatenate(
-            (
-                chip8.display,
-                np.zeros(
-                    (m * n - n_emulators, SCREEN_WIDTH * SCREEN_HEIGHT),
-                    dtype=np.uint8,
-                ),
+        chip8.cycle()
+
+        if n_cycles % 8 == 0:
+            chip8.update_timers()
+            # Draw display
+            screen.fill((0, 0, 0))
+            filled_display = np.concatenate(
+                (
+                    chip8.display,
+                    np.zeros(
+                        (m * n - n_emulators, SCREEN_WIDTH * SCREEN_HEIGHT),
+                        dtype=np.uint8,
+                    ),
+                )
             )
-        )
-        display_pixels = (
-            filled_display.reshape((m, n, SCREEN_HEIGHT, SCREEN_WIDTH))
-            .swapaxes(1, 2)
-            .reshape((m * SCREEN_HEIGHT, n * SCREEN_WIDTH))
-        )
-        display_pixels *= 255
-        display_pixels = np.repeat(display_pixels, SCALE, axis=0)
-        display_pixels = np.repeat(display_pixels, SCALE, axis=1)
+            display_pixels = (
+                filled_display.reshape((m, n, SCREEN_HEIGHT, SCREEN_WIDTH))
+                .swapaxes(1, 2)
+                .reshape((m * SCREEN_HEIGHT, n * SCREEN_WIDTH))
+            )
+            display_pixels *= 255
+            display_pixels = np.repeat(display_pixels, SCALE, axis=0)
+            display_pixels = np.repeat(display_pixels, SCALE, axis=1)
 
-        surface = pygame.surfarray.make_surface(display_pixels.T)
-        screen.blit(surface, (0, 0))
+            surface = pygame.surfarray.make_surface(display_pixels.T)
+            screen.blit(surface, (0, 0))
+            pygame.display.flip()
+            clock.tick()
+            print("FPS:", int(clock.get_fps()), end="\r")
 
-        pygame.display.flip()
+        n_cycles += 1
 
     pygame.quit()
 

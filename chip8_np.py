@@ -322,16 +322,11 @@ def main(game_filename):
     if "5_quirks" in game_filename:
         chip8.memory[0x1FF] = 1
 
-    delay_timer = pygame.USEREVENT
-    # 17ms for the 60Hz delay timer
-    pygame.time.set_timer(delay_timer, 17)
-
-    clock_timer = pygame.USEREVENT + 1
-    # 2ms so that the game doesn't run too fast
-    pygame.time.set_timer(clock_timer, 2)
+    clock = pygame.time.Clock()
 
     # Main loop
     running = True
+    n_cycles = 0
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -342,24 +337,28 @@ def main(game_filename):
             elif event.type == pygame.KEYUP:
                 if event.key in KEY_MAP:
                     chip8.keys[KEY_MAP[event.key]] = 0
-            elif event.type == delay_timer:
-                chip8.update_timers()
-            elif event.type == clock_timer:
-                chip8.cycle()
 
-        # Draw display
-        screen.fill((0, 0, 0))
-        display_pixels = chip8.display.copy().reshape(
-            (SCREEN_HEIGHT, SCREEN_WIDTH)
-        )
-        display_pixels *= 255
-        display_pixels = np.repeat(display_pixels, SCALE, axis=0)
-        display_pixels = np.repeat(display_pixels, SCALE, axis=1)
+        chip8.cycle()
 
-        surface = pygame.surfarray.make_surface(display_pixels.T)
-        screen.blit(surface, (0, 0))
+        # assuming cycle is 500Hz (2ms) and timers are 60Hz (16.7ms)
+        if n_cycles % 8 == 0:
+            chip8.update_timers()
+            # Draw display
+            screen.fill((0, 0, 0))
+            display_pixels = chip8.display.copy().reshape(
+                (SCREEN_HEIGHT, SCREEN_WIDTH)
+            )
+            display_pixels *= 255
+            display_pixels = np.repeat(display_pixels, SCALE, axis=0)
+            display_pixels = np.repeat(display_pixels, SCALE, axis=1)
 
-        pygame.display.flip()
+            surface = pygame.surfarray.make_surface(display_pixels.T)
+            screen.blit(surface, (0, 0))
+            pygame.display.flip()
+            clock.tick()
+            print("FPS:", int(clock.get_fps()), end="\r")
+
+        n_cycles += 1
 
     pygame.quit()
 
