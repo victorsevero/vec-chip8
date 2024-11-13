@@ -100,11 +100,6 @@ class Chip8:
             dtype=th.int,
             device=self.device,
         )
-        self.sound_timer = th.zeros(
-            n_emulators,
-            dtype=th.int,
-            device=self.device,
-        )
         self.display = th.zeros(
             (n_emulators, SCREEN_WIDTH * SCREEN_HEIGHT),
             dtype=th.uint8,
@@ -494,13 +489,6 @@ class Chip8:
                 opcode_idxs,
                 x[opcode_idxs],
             ].int()
-        if (opcode & 0xF0FF == 0xF018).any():
-            opcode_idxs = th.nonzero(opcode & 0xF0FF == 0xF018).squeeze(1)
-            # Set sound timer = Vx
-            self.sound_timer[opcode_idxs] = self.v[
-                opcode_idxs,
-                x[opcode_idxs],
-            ].int()
         if (opcode & 0xF0FF == 0xF01E).any():
             opcode_idxs = th.nonzero(opcode & 0xF0FF == 0xF01E).squeeze(1)
             # Set I = I + Vx
@@ -557,11 +545,6 @@ class Chip8:
         self.delay_timer = th.where(
             self.delay_timer > 0,
             self.delay_timer - 1,
-            0,
-        )
-        self.sound_timer = th.where(
-            self.sound_timer > 0,
-            self.sound_timer - 1,
             0,
         )
 

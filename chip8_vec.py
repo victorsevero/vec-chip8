@@ -1,5 +1,4 @@
 import argparse
-from functools import wraps
 
 import numpy as np
 import pygame
@@ -59,15 +58,6 @@ KEY_MAP = {
 }
 
 
-def suppress_overflow_warning(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        with np.errstate(over="ignore"):
-            return func(*args, **kwargs)
-
-    return wrapper
-
-
 class Chip8:
     def __init__(self, n_emulators, seed=None):
         self.memory = np.zeros((n_emulators, MEMORY_SIZE), dtype=np.uint8)
@@ -82,7 +72,6 @@ class Chip8:
         # Stack pointer
         self.sp = np.zeros(n_emulators, dtype=np.uint16)
         self.delay_timer = np.zeros(n_emulators, dtype=np.uint16)
-        self.sound_timer = np.zeros(n_emulators, dtype=np.uint16)
         self.display = np.zeros(
             (n_emulators, SCREEN_WIDTH * SCREEN_HEIGHT),
             dtype=np.uint8,
@@ -107,7 +96,6 @@ class Chip8:
             self.pc // 2,
         ].byteswap()
 
-    @suppress_overflow_warning
     def execute_opcode(self, opcode: np.ndarray[np.uint16]):
         # Extracting nibbles from opcode
         nnn = opcode & 0x0FFF
@@ -451,10 +439,6 @@ class Chip8:
             opcode_idxs = np.nonzero(opcode & 0xF0FF == 0xF015)[0]
             # Set delay timer = Vx
             self.delay_timer[opcode_idxs] = self.v[opcode_idxs, x[opcode_idxs]]
-        if (opcode & 0xF0FF == 0xF018).any():
-            opcode_idxs = np.nonzero(opcode & 0xF0FF == 0xF018)[0]
-            # Set sound timer = Vx
-            self.sound_timer[opcode_idxs] = self.v[opcode_idxs, x[opcode_idxs]]
         if (opcode & 0xF0FF == 0xF01E).any():
             opcode_idxs = np.nonzero(opcode & 0xF0FF == 0xF01E)[0]
             # Set I = I + Vx
@@ -506,14 +490,10 @@ class Chip8:
         # Move to the next instruction
         self.pc += 2
 
-    @suppress_overflow_warning
     def update_timers(self):
         # Update timers
         self.delay_timer = np.uint8(
             np.where(self.delay_timer > 0, self.delay_timer - 1, 0)
-        )
-        self.sound_timer = np.uint8(
-            np.where(self.sound_timer > 0, self.sound_timer - 1, 0)
         )
 
     def cycle(self):
