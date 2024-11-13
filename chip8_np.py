@@ -67,7 +67,7 @@ class Chip8:
         self.pc = np.uint16(PROGRAM_START)  # Program counter
         self.stack = np.zeros(STACK_SIZE, dtype=np.uint16)
         self.sp = np.uint16(0)  # Stack pointer
-        self.delay_timer = np.uint8(0)
+        self.delay_timer = np.int16(0)
         self.display = np.zeros(SCREEN_WIDTH * SCREEN_HEIGHT, dtype=np.uint8)
 
         # this extra index exists just so that we can evaluate
@@ -219,7 +219,7 @@ class Chip8:
             self.pc += np.uint16(np.where(self.keys[self.v[x]] == 0, 2, 0))
         elif (opcode & 0xF0FF) == 0xF007:
             # Set Vx = delay timer value
-            self.v[x] = self.delay_timer
+            self.v[x] = np.uint8(self.delay_timer)
         elif (opcode & 0xF0FF) == 0xF00A:
             just_pressed = (self.pressed_key == KEY_COUNT) & np.any(
                 self.keys[:-1]
@@ -248,7 +248,7 @@ class Chip8:
 
         elif (opcode & 0xF0FF) == 0xF015:
             # Set delay timer = Vx
-            self.delay_timer = self.v[x]
+            self.delay_timer = np.int16(self.v[x])
         elif (opcode & 0xF0FF) == 0xF018:
             # Set sound timer = Vx
             pass
@@ -279,9 +279,7 @@ class Chip8:
 
     def update_timers(self):
         # Update timers
-        self.delay_timer = np.uint8(
-            np.where(self.delay_timer > 0, self.delay_timer - 1, 0)
-        )
+        self.delay_timer = np.int16(np.maximum(self.delay_timer - 1, 0))
 
     def cycle(self):
         # Fetch, decode, and execute

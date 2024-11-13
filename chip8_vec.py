@@ -71,7 +71,7 @@ class Chip8:
         self.stack = np.zeros((n_emulators, STACK_SIZE), dtype=np.uint16)
         # Stack pointer
         self.sp = np.zeros(n_emulators, dtype=np.uint16)
-        self.delay_timer = np.zeros(n_emulators, dtype=np.uint16)
+        self.delay_timer = np.zeros(n_emulators, dtype=np.int16)
         self.display = np.zeros(
             (n_emulators, SCREEN_WIDTH * SCREEN_HEIGHT),
             dtype=np.uint8,
@@ -397,7 +397,9 @@ class Chip8:
         if (opcode & 0xF0FF == 0xF007).any():
             opcode_idxs = np.nonzero(opcode & 0xF0FF == 0xF007)[0]
             # Set Vx = delay timer value
-            self.v[opcode_idxs, x[opcode_idxs]] = self.delay_timer[opcode_idxs]
+            self.v[opcode_idxs, x[opcode_idxs]] = np.uint8(
+                self.delay_timer[opcode_idxs]
+            )
         if (opcode & 0xF0FF == 0xF00A).any():
             opcode_idxs = np.nonzero(opcode & 0xF0FF == 0xF00A)[0]
             n_ems = opcode_idxs.size
@@ -438,7 +440,9 @@ class Chip8:
         if (opcode & 0xF0FF == 0xF015).any():
             opcode_idxs = np.nonzero(opcode & 0xF0FF == 0xF015)[0]
             # Set delay timer = Vx
-            self.delay_timer[opcode_idxs] = self.v[opcode_idxs, x[opcode_idxs]]
+            self.delay_timer[opcode_idxs] = np.int16(
+                self.v[opcode_idxs, x[opcode_idxs]]
+            )
         if (opcode & 0xF0FF == 0xF01E).any():
             opcode_idxs = np.nonzero(opcode & 0xF0FF == 0xF01E)[0]
             # Set I = I + Vx
@@ -492,9 +496,7 @@ class Chip8:
 
     def update_timers(self):
         # Update timers
-        self.delay_timer = np.uint8(
-            np.where(self.delay_timer > 0, self.delay_timer - 1, 0)
-        )
+        self.delay_timer = np.int16(np.maximum(self.delay_timer - 1, 0))
 
     def cycle(self):
         # Fetch, decode, and execute

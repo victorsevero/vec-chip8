@@ -125,6 +125,9 @@ class Chip8:
         self.rng = th.Generator(device=self.device)
         self.rng.manual_seed(seed)
         self.n_emulators = n_emulators
+        self.ZEROS = th.zeros(
+            (self.n_emulators,), dtype=th.int, device=self.device
+        )
 
     def load_program(self, program: th.ByteTensor):
         self.memory[:, PROGRAM_START : PROGRAM_START + len(program)] = program
@@ -542,11 +545,7 @@ class Chip8:
 
     def update_timers(self):
         # Update timers
-        self.delay_timer = th.where(
-            self.delay_timer > 0,
-            self.delay_timer - 1,
-            0,
-        )
+        self.delay_timer = th.maximum(self.delay_timer - 1, self.ZEROS)
 
     def cycle(self):
         # Fetch, decode, and execute
