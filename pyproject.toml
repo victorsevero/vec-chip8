@@ -9,7 +9,11 @@ readme = "README.md"
 python = "^3.13"
 pygame = "^2.6.1"
 numpy = "^2.1.2"
+torch = "^2.5.1"
 
+
+[tool.poetry.group.dev.dependencies]
+snakeviz = "^2.2.0"
 
 [build-system]
 requires = ["poetry-core"]
