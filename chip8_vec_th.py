@@ -60,33 +60,74 @@ KEY_MAP = {
 
 
 class Chip8:
-    def __init__(self, n_emulators, seed=None):
-        self.memory = th.zeros((n_emulators, MEMORY_SIZE), dtype=th.uint8)
+    def __init__(self, n_emulators, seed=None, device=None):
+        if device is None:
+            self.device = th.device(
+                "cuda" if th.cuda.is_available() else "cpu"
+            )
+        else:
+            self.device = device
+        self.memory = th.zeros(
+            (n_emulators, MEMORY_SIZE),
+            dtype=th.uint8,
+            device=self.device,
+        )
         self.memory[:, : len(FONT_SET)] = FONT_SET
         # V0 to VF
-        self.v = th.zeros((n_emulators, REGISTER_COUNT), dtype=th.uint8)
+        self.v = th.zeros(
+            (n_emulators, REGISTER_COUNT),
+            dtype=th.uint8,
+            device=self.device,
+        )
         # Index register
-        self.i = th.zeros(n_emulators, dtype=th.int)
+        self.i = th.zeros(n_emulators, dtype=th.int, device=self.device)
         # Program counter
-        self.pc = th.full((n_emulators,), PROGRAM_START, dtype=th.int)
-        self.stack = th.zeros((n_emulators, STACK_SIZE), dtype=th.int)
+        self.pc = th.full(
+            (n_emulators,),
+            PROGRAM_START,
+            dtype=th.int,
+            device=self.device,
+        )
+        self.stack = th.zeros(
+            (n_emulators, STACK_SIZE),
+            dtype=th.int,
+            device=self.device,
+        )
         # Stack pointer
-        self.sp = th.zeros(n_emulators, dtype=th.int)
-        self.delay_timer = th.zeros(n_emulators, dtype=th.int)
-        self.sound_timer = th.zeros(n_emulators, dtype=th.int)
+        self.sp = th.zeros(n_emulators, dtype=th.int, device=self.device)
+        self.delay_timer = th.zeros(
+            n_emulators,
+            dtype=th.int,
+            device=self.device,
+        )
+        self.sound_timer = th.zeros(
+            n_emulators,
+            dtype=th.int,
+            device=self.device,
+        )
         self.display = th.zeros(
             (n_emulators, SCREEN_WIDTH * SCREEN_HEIGHT),
             dtype=th.uint8,
+            device=self.device,
         )
 
         # this extra index exists just so that we can evaluate
         # `self.keys[self.pressed_key]` without any issues since numpy doesn't
         # short-circuit bitwise operations and we need to set
         # `self.pressed_key` to `KEY_COUNT` when no key is pressed
-        self.keys = th.zeros((n_emulators, KEY_COUNT + 1), dtype=th.uint8)
-        self.pressed_key = th.full((n_emulators,), KEY_COUNT, dtype=th.uint8)
+        self.keys = th.zeros(
+            (n_emulators, KEY_COUNT + 1),
+            dtype=th.uint8,
+            device=self.device,
+        )
+        self.pressed_key = th.full(
+            (n_emulators,),
+            KEY_COUNT,
+            dtype=th.uint8,
+            device=self.device,
+        )
 
-        self.rng = th.Generator()
+        self.rng = th.Generator(device=self.device)
         self.rng.manual_seed(seed)
         self.n_emulators = n_emulators
 
@@ -95,7 +136,7 @@ class Chip8:
 
     def fetch_opcode(self) -> th.ShortTensor:
         preswap_tensor = self.memory.view(th.uint16).short()[
-            th.arange(self.n_emulators, dtype=th.int32),
+            th.arange(self.n_emulators, dtype=th.int32, device=self.device),
             self.pc // 2,
         ]
         # swap bytes
@@ -125,6 +166,7 @@ class Chip8:
             self.display[opcode_idxs] = th.zeros(
                 SCREEN_WIDTH * SCREEN_HEIGHT,
                 dtype=th.uint8,
+                device=self.device,
             )
         if (opcode == 0x00EE).any():
             opcode_idxs = th.nonzero(opcode == 0x00EE).squeeze(1)
@@ -296,6 +338,7 @@ class Chip8:
                     size=(opcode_idxs.shape[0],),
                     generator=self.rng,
                     dtype=th.uint8,
+                    device=self.device,
                 )
                 & kk[opcode_idxs]
             )
@@ -308,12 +351,13 @@ class Chip8:
             self.v[opcode_idxs, 0xF] = 0
 
             clipped_x_size = th.minimum(
-                SCREEN_WIDTH - vx, th.IntTensor([8] * n_ems)
+                SCREEN_WIDTH - vx,
+                th.IntTensor([8] * n_ems).to(self.device),
             )
             clipped_y_size = th.minimum(SCREEN_HEIGHT - vy, n[opcode_idxs])
 
             max_size_y = clipped_y_size.max()
-            base_range_y = th.arange(max_size_y)
+            base_range_y = th.arange(max_size_y, device=self.device)
             ranges_y = th.repeat_interleave(
                 base_range_y[th.newaxis, :],
                 n_ems,
@@ -324,7 +368,7 @@ class Chip8:
             )
 
             max_size_x = 8
-            base_range_x = th.arange(max_size_x)
+            base_range_x = th.arange(max_size_x, device=self.device)
             ranges_x = th.repeat_interleave(
                 base_range_x[th.newaxis, :],
                 n_ems,
@@ -439,7 +483,7 @@ class Chip8:
             ).type(th.uint8)
             self.pressed_key[opcode_idxs] = th.where(
                 just_released,
-                th.full((n_ems,), KEY_COUNT),
+                th.full((n_ems,), KEY_COUNT, device=self.device),
                 self.pressed_key[opcode_idxs],
             ).type(th.uint8)
 
@@ -481,7 +525,7 @@ class Chip8:
             opcode_idxs = th.nonzero(opcode & 0xF0FF == 0xF055).squeeze(1)
             # Store registers V0 through Vx in memory starting at location I
             max_x = x[opcode_idxs].max()
-            range_x = th.arange(max_x + 1)
+            range_x = th.arange(max_x + 1, device=self.device)
             mask = range_x < x[opcode_idxs][:, th.newaxis] + 1
             row_indices, col_indices = th.nonzero(mask, as_tuple=True)
 
@@ -495,7 +539,7 @@ class Chip8:
             opcode_idxs = th.nonzero(opcode & 0xF0FF == 0xF065).squeeze(1)
             # Read registers V0 through Vx from memory starting at location I
             max_x = x[opcode_idxs].max()
-            range_x = th.arange(max_x + 1)
+            range_x = th.arange(max_x + 1, device=self.device)
             mask = range_x < x[opcode_idxs][:, th.newaxis] + 1
             row_indices, col_indices = th.nonzero(mask, as_tuple=True)
 
@@ -575,7 +619,8 @@ def find_best_grid(n_emulators: int) -> tuple[int, int]:
 
 def main(game_filename, n_emulators):
     # Initialize emulator and graphics
-    chip8 = Chip8(n_emulators=n_emulators, seed=666)
+    device = th.device("cuda" if th.cuda.is_available() else "cpu")
+    chip8 = Chip8(n_emulators=n_emulators, seed=666, device=device)
     m, n = find_best_grid(n_emulators)
     pygame.init()
     screen = pygame.display.set_mode(
@@ -605,10 +650,16 @@ def main(game_filename, n_emulators):
                 running = False
             elif event.type == pygame.KEYDOWN:
                 if event.key in KEY_MAP:
-                    chip8.keys[th.arange(n_emulators), KEY_MAP[event.key]] = 1
+                    chip8.keys[
+                        th.arange(n_emulators, device=device),
+                        KEY_MAP[event.key],
+                    ] = 1
             elif event.type == pygame.KEYUP:
                 if event.key in KEY_MAP:
-                    chip8.keys[th.arange(n_emulators), KEY_MAP[event.key]] = 0
+                    chip8.keys[
+                        th.arange(n_emulators, device=device),
+                        KEY_MAP[event.key],
+                    ] = 0
 
         chip8.cycle()
 
@@ -622,6 +673,7 @@ def main(game_filename, n_emulators):
                     th.zeros(
                         (m * n - n_emulators, SCREEN_WIDTH * SCREEN_HEIGHT),
                         dtype=th.uint8,
+                        device=device,
                     ),
                 )
             )
@@ -642,7 +694,9 @@ def main(game_filename, n_emulators):
                 axis=1,
             )
 
-            surface = pygame.surfarray.make_surface(display_pixels.T.numpy())
+            surface = pygame.surfarray.make_surface(
+                display_pixels.T.cpu().numpy()
+            )
             screen.blit(surface, (0, 0))
             pygame.display.flip()
             clock.tick()
