@@ -1,5 +1,4 @@
 import argparse
-from functools import wraps
 
 import numpy as np
 import pygame
@@ -59,15 +58,6 @@ KEY_MAP = {
 }
 
 
-def suppress_overflow_warning(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        with np.errstate(over="ignore"):
-            return func(*args, **kwargs)
-
-    return wrapper
-
-
 class Chip8:
     def __init__(self, seed=None):
         self.memory = np.zeros(MEMORY_SIZE, dtype=np.uint8)
@@ -78,7 +68,6 @@ class Chip8:
         self.stack = np.zeros(STACK_SIZE, dtype=np.uint16)
         self.sp = np.uint16(0)  # Stack pointer
         self.delay_timer = np.uint8(0)
-        self.sound_timer = np.uint8(0)
         self.display = np.zeros(SCREEN_WIDTH * SCREEN_HEIGHT, dtype=np.uint8)
 
         # this extra index exists just so that we can evaluate
@@ -96,7 +85,6 @@ class Chip8:
     def fetch_opcode(self) -> np.uint16:
         return self.memory.view(np.uint16)[self.pc // 2].byteswap()
 
-    @suppress_overflow_warning
     def execute_opcode(self, opcode):
         # Extracting nibbles from opcode
         nnn = opcode & 0x0FFF
@@ -214,7 +202,8 @@ class Chip8:
             y_indices = vy + np.arange(clipped_y_size)
             x_indices = vx + np.arange(clipped_x_size)
 
-            grid_y, grid_x = np.meshgrid(y_indices, x_indices, indexing="ij")
+            grid_y = y_indices[:, None]
+            grid_x = x_indices[None, :]
             flat_indices = (grid_y * SCREEN_WIDTH + grid_x).ravel()
 
             collision = (self.display[flat_indices] & flat_sprite).any()
@@ -262,7 +251,7 @@ class Chip8:
             self.delay_timer = self.v[x]
         elif (opcode & 0xF0FF) == 0xF018:
             # Set sound timer = Vx
-            self.sound_timer = self.v[x]
+            pass
         elif (opcode & 0xF0FF) == 0xF01E:
             # Set I = I + Vx
             self.i += self.v[x]
@@ -288,14 +277,10 @@ class Chip8:
         # Move to the next instruction
         self.pc += 2
 
-    @suppress_overflow_warning
     def update_timers(self):
         # Update timers
         self.delay_timer = np.uint8(
             np.where(self.delay_timer > 0, self.delay_timer - 1, 0)
-        )
-        self.sound_timer = np.uint8(
-            np.where(self.sound_timer > 0, self.sound_timer - 1, 0)
         )
 
     def cycle(self):
