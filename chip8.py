@@ -1,5 +1,7 @@
 import argparse
 import random
+from multiprocessing import Process, Queue
+from time import perf_counter
 
 import pygame
 
@@ -271,14 +273,57 @@ class Chip8:
         self.execute_opcode(opcode)
 
 
-def main(game_filename):
+def run_emulator(emulator_id, game_data, max_cycles, result_queue):
+    chip8 = Chip8()
+    chip8.load_program(game_data)
+
+    n_cycles = 0
+
+    while max_cycles is None or n_cycles < max_cycles:
+        chip8.cycle()
+        if n_cycles % 8 == 0:
+            chip8.update_timers()
+        n_cycles += 1
+
+    result_queue.put(emulator_id)
+
+
+def main_multiprocessing(game_filename, n_emulators, max_cycles):
+    # Read the program
+    with open(game_filename, "rb") as f:
+        game_data = f.read()
+
+    processes = []
+    result_queue = Queue()
+
+    for emulator_id in range(n_emulators):
+        p = Process(
+            target=run_emulator,
+            args=(emulator_id, game_data, max_cycles, result_queue),
+        )
+        processes.append(p)
+
+    start_time = perf_counter()
+
+    for p in processes:
+        p.start()
+
+    for p in processes:
+        p.join()
+
+    end_time = perf_counter()
+
+    return end_time - start_time
+
+
+def main(game_filename, max_cycles=None):
     # Initialize emulator and graphics
     chip8 = Chip8()
-    pygame.init()
-    screen = pygame.display.set_mode(
-        (SCREEN_WIDTH * SCALE, SCREEN_HEIGHT * SCALE)
-    )
-    pygame.display.set_caption("CHIP-8 Interpreter")
+    # pygame.init()
+    # screen = pygame.display.set_mode(
+    #     (SCREEN_WIDTH * SCALE, SCREEN_HEIGHT * SCALE)
+    # )
+    # pygame.display.set_caption("CHIP-8 Interpreter")
 
     # Load a program from game file
     with open(game_filename, "rb") as f:
@@ -289,21 +334,21 @@ def main(game_filename):
     if "5_quirks" in game_filename:
         chip8.memory[0x1FF] = 1
 
-    clock = pygame.time.Clock()
+    # clock = pygame.time.Clock()
 
     # Main loop
     running = True
     n_cycles = 0
     while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-            elif event.type == pygame.KEYDOWN:
-                if event.key in KEY_MAP:
-                    chip8.keys[KEY_MAP[event.key]] = 1
-            elif event.type == pygame.KEYUP:
-                if event.key in KEY_MAP:
-                    chip8.keys[KEY_MAP[event.key]] = 0
+        # for event in pygame.event.get():
+        #     if event.type == pygame.QUIT:
+        #         running = False
+        #     elif event.type == pygame.KEYDOWN:
+        #         if event.key in KEY_MAP:
+        #             chip8.keys[KEY_MAP[event.key]] = 1
+        #     elif event.type == pygame.KEYUP:
+        #         if event.key in KEY_MAP:
+        #             chip8.keys[KEY_MAP[event.key]] = 0
 
         chip8.cycle()
 
@@ -311,20 +356,22 @@ def main(game_filename):
         if n_cycles % 8 == 0:
             chip8.update_timers()
             # Draw display
-            screen.fill((0, 0, 0))
-            for y in range(SCREEN_HEIGHT):
-                for x in range(SCREEN_WIDTH):
-                    if chip8.display[x + (y * SCREEN_WIDTH)] == 1:
-                        pygame.draw.rect(
-                            screen,
-                            (255, 255, 255),
-                            (x * SCALE, y * SCALE, SCALE, SCALE),
-                        )
-            pygame.display.flip()
-            clock.tick()
-            print("FPS:", int(clock.get_fps()), end="\r")
+            # screen.fill((0, 0, 0))
+            # for y in range(SCREEN_HEIGHT):
+            #     for x in range(SCREEN_WIDTH):
+            #         if chip8.display[x + (y * SCREEN_WIDTH)] == 1:
+            #             pygame.draw.rect(
+            #                 screen,
+            #                 (255, 255, 255),
+            #                 (x * SCALE, y * SCALE, SCALE, SCALE),
+            #             )
+            # pygame.display.flip()
+            # clock.tick()
+            # print("FPS:", int(clock.get_fps()), end="\r")
 
         n_cycles += 1
+        if max_cycles is not None and n_cycles >= max_cycles:
+            running = False
 
     pygame.quit()
 
@@ -335,6 +382,17 @@ if __name__ == "__main__":
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument("game", help="Game Filename without extension")
+    parser.add_argument("--n_emulators", "-n", type=int, default=8)
+    parser.add_argument("--scale", "-s", type=int, default=1)
+    parser.add_argument("--max_cycles", "-m", type=int, default=100)
     args = parser.parse_args()
     config = vars(args)
-    main(f"games/{config['game']}.ch8")
+    SCALE = config["scale"]
+    if config["n_emulators"] > 1:
+        main_multiprocessing(
+            f"games/{config['game']}.ch8",
+            n_emulators=config["n_emulators"],
+            max_cycles=config["max_cycles"],
+        )
+    else:
+        main(f"games/{config['game']}.ch8", max_cycles=config["max_cycles"])
