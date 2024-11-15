@@ -14,6 +14,10 @@ torch = "^2.5.1"
 
 [tool.poetry.group.dev.dependencies]
 snakeviz = "^2.2.0"
+ipykernel = "^6.29.5"
+pandas = "^2.2.3"
+tqdm = "^4.67.0"
+seaborn = "^0.13.2"
 
 [build-system]
 requires = ["poetry-core"]

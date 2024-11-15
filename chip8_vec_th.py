@@ -1,4 +1,5 @@
 import argparse
+from time import perf_counter
 
 import numpy as np
 import pygame
@@ -172,7 +173,7 @@ class Chip8:
         self.memory[:, PROGRAM_START : PROGRAM_START + len(program)] = program
 
     def fetch_opcode(self) -> th.IntTensor:
-        preswap_tensor = self.memory.view(th.uint16).short()[
+        preswap_tensor = self.memory.view(th.int16)[
             th.arange(self.n_emulators, dtype=th.int32, device=self.device),
             self.pc // 2,
         ]
@@ -671,7 +672,7 @@ def find_best_grid(n_emulators: int) -> tuple[int, int]:
     return best_m, best_n
 
 
-def main(game_filename, n_emulators):
+def main(game_filename, n_emulators, max_cycles=None):
     # Initialize emulator and graphics
     device = th.device("cuda" if th.cuda.is_available() else "cpu")
     chip8 = Chip8(n_emulators=n_emulators, seed=666, device=device)
@@ -698,6 +699,7 @@ def main(game_filename, n_emulators):
     # Main loop
     running = True
     n_cycles = 0
+    start = perf_counter()
     while running:
         # for event in pygame.event.get():
         #     if event.type == pygame.QUIT:
@@ -757,10 +759,13 @@ def main(game_filename, n_emulators):
             # print("FPS:", int(clock.get_fps()), end="\r")
 
         n_cycles += 1
-        if n_cycles == 10000:
+        if max_cycles is not None and n_cycles >= max_cycles:
             running = False
 
+    end = perf_counter()
     # pygame.quit()
+
+    return end - start
 
 
 if __name__ == "__main__":
@@ -770,9 +775,14 @@ if __name__ == "__main__":
     )
     parser.add_argument("game", help="Game Filename without extension")
     # a nice -n to display is 16*9*2^(2N+1), because width is double the height
-    parser.add_argument("--n_emulators", "-n", type=int, default=5000)
-    parser.add_argument("--scale", "-s", type=int, default=1)
+    parser.add_argument("--n_emulators", "-n", type=int, default=2)
+    parser.add_argument("--scale", "-s", type=int, default=10)
+    parser.add_argument("--max_cycles", "-m", type=int, default=10_000)
     args = parser.parse_args()
     config = vars(args)
     SCALE = config["scale"]
-    main(f"games/{config['game']}.ch8", n_emulators=config["n_emulators"])
+    main(
+        f"games/{config['game']}.ch8",
+        n_emulators=config["n_emulators"],
+        max_cycles=config["max_cycles"],
+    )
