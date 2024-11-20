@@ -105,7 +105,7 @@ class Chip8:
         n = (opcode & 0x000F).astype(cp.uint8)
         x = (opcode & 0x0F00) >> 8
         y = (opcode & 0x00F0) >> 4
-        kk = (opcode).astype(cp.uint8)
+        kk = opcode.astype(cp.uint8)
 
         # Decode and execute opcode
         if (opcode == 0x00E0).any():
