@@ -1,6 +1,6 @@
 # CHIP-8 Implementation in Python
 
-This project is an attempt to make CHIP-8 interpreters with Python according to the following plan:
+This project is an attempt to make CHIP-8 interpreters with Python according to the following paradigms:
 
 - [X] standard implementation
 - [X] `numpy` implementation
