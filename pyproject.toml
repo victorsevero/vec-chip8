@@ -10,6 +10,7 @@ python = "^3.13"
 pygame = "^2.6.1"
 numpy = "^2.1.2"
 torch = "^2.5.1"
+jax = {extras = ["cuda12"], version = "^0.4.35"}
 
 
 [tool.poetry.group.dev.dependencies]
