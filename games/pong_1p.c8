@@ -1,0 +1,148 @@
+; Setting used by the chipper assembler
+option schip11
+option binary
+align off
+
+; Recursive Disassembly
+End of file
+0x0200	ld va, #02
+0x0202	ld vb, #0c
+0x0204	ld vc, #3f
+0x0206	ld vd, #0c
+0x0208	ld I, #02ea
+0x020a	drw va, vb, #6
+0x020c	drw vc, vd, #6
+0x020e	ld ve, #00
+0x0210	call loc_02d4
+0x0212	ld v6, #03
+0x0214	ld v8, #02
+loc_0216:   ; == START OF CODE BLOCK ==
+0x0216	ld v0, #60
+0x0218	ld dt, v0
+loc_021a:   ; == START OF CODE BLOCK ==
+0x021a	ld v0, dt
+0x021c	se v0, #00
+0x021e	jp loc_021a
+0x0220	rnd v7, #17
+0x0222	add v7, #08
+0x0224	ld v9, #ff
+0x0226	ld I, #02f0
+0x0228	drw v6, v7, #1
+loc_022a:   ; == START OF CODE BLOCK ==
+0x022a	ld I, #02ea
+0x022c	drw va, vb, #6
+0x022e	drw vc, vd, #6
+0x0230	ld v0, #01
+0x0232	sknp v0
+0x0234	add vb, #fe
+0x0236	ld v0, #04
+0x0238	sknp v0
+0x023a	add vb, #02
+0x023c	ld v0, #1f
+0x023e	and vb, v0
+0x0240	drw va, vb, #6
+0x0242	ld vd, v7
+0x0244	rnd v0, #0a
+0x0246	add vd, #fe
+0x0248	sne v0, #00
+0x024a	add vd, #02
+0x024c	ld v0, #00
+0x024e	ld v0, #1f
+0x0250	and vd, v0
+0x0252	drw vc, vd, #6
+0x0254	ld I, #02f0
+0x0256	drw v6, v7, #1
+0x0258	add v6, v8
+0x025a	add v7, v9
+0x025c	ld v0, #3f
+0x025e	and v6, v0
+0x0260	ld v1, #1f
+0x0262	and v7, v1
+0x0264	sne v6, #02
+0x0266	jp loc_0278
+0x0268	sne v6, #3f
+0x026a	jp loc_0282
+loc_026c:   ; == START OF CODE BLOCK ==
+0x026c	sne v7, #1f
+0x026e	ld v9, #ff
+0x0270	sne v7, #00
+0x0272	ld v9, #01
+0x0274	drw v6, v7, #1
+0x0276	jp loc_022a
+loc_0278:   ; == START OF CODE BLOCK ==
+0x0278	ld v8, #02
+0x027a	ld v3, #01
+0x027c	ld v0, v7
+0x027e	sub v0, vb
+0x0280	jp loc_028a
+loc_0282:   ; == START OF CODE BLOCK ==
+0x0282	ld v8, #fe
+0x0284	ld v3, #0a
+0x0286	ld v0, v7
+0x0288	sub v0, vd
+loc_028a:   ; == START OF CODE BLOCK ==
+0x028a	se vf, #01
+0x028c	jp loc_02a2
+0x028e	ld v1, #02
+0x0290	sub v0, v1
+0x0292	se vf, #01
+0x0294	jp loc_02ba
+0x0296	sub v0, v1
+0x0298	se vf, #01
+0x029a	jp loc_02c8
+0x029c	sub v0, v1
+0x029e	se vf, #01
+0x02a0	jp loc_02c2
+loc_02a2:   ; == START OF CODE BLOCK ==
+0x02a2	ld v0, #20
+0x02a4	ld st, v0
+0x02a6	call loc_02d4
+0x02a8	add ve, v3
+0x02aa	call loc_02d4
+0x02ac	ld v6, #3e
+0x02ae	se v3, #01
+0x02b0	ld v6, #03
+0x02b2	ld v8, #fe
+0x02b4	se v3, #01
+0x02b6	ld v8, #02
+0x02b8	jp loc_0216
+loc_02ba:   ; == START OF CODE BLOCK ==
+0x02ba	add v9, #ff
+0x02bc	sne v9, #fe
+0x02be	ld v9, #ff
+0x02c0	jp loc_02c8
+loc_02c2:   ; == START OF CODE BLOCK ==
+0x02c2	add v9, #01
+0x02c4	sne v9, #02
+0x02c6	ld v9, #01
+loc_02c8:   ; == START OF CODE BLOCK ==
+0x02c8	ld v0, #04
+0x02ca	ld st, v0
+0x02cc	add v6, #01
+0x02ce	sne v6, #40
+0x02d0	add v6, #fe
+0x02d2	jp loc_026c
+loc_02d4:   ; == START OF CODE BLOCK ==
+0x02d4	ld I, #02f2
+0x02d6	ld b, ve
+0x02d8	ld v2, [I]
+0x02da	ld f, v1
+0x02dc	ld v4, #14
+0x02de	ld v5, #00
+0x02e0	drw v4, v5, #5
+0x02e2	add v4, #15
+0x02e4	ld f, v2
+0x02e6	drw v4, v5, #5
+0x02e8	ret
+0x02ea	db #80	;GRAPHIC = #       
+0x02eb	db #80	;GRAPHIC = #       
+0x02ec	db #80	;GRAPHIC = #       
+0x02ed	db #80	;GRAPHIC = #       
+0x02ee	db #80	;GRAPHIC = #       
+0x02ef	db #80	;GRAPHIC = #       
+0x02f0	db #80	;GRAPHIC = #       
+0x02f1	db #00	;GRAPHIC =         
+0x02f2	db #00	;GRAPHIC =         
+0x02f3	db #00	;GRAPHIC =         
+0x02f4	db #00	;GRAPHIC =         
+0x02f5	db #00	;GRAPHIC =         

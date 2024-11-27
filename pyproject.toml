@@ -12,6 +12,7 @@ numpy = "^2.1.2"
 torch = "^2.5.1"
 jax = {extras = ["cuda12"], version = "^0.4.35"}
 cupy-cuda11x = "^13.3.0"
+gymnasium = "^1.0.0"
 
 
 [tool.poetry.group.dev.dependencies]
